@@ -1,0 +1,384 @@
+<!doctype html>
+<html lang="id">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Perpustakaan Digital (Lokal) - MIS Nahdlatul Ulama Durungbedug</title>
+<style>
+  :root{
+    --nu-dark:#196619;
+    --nu-mid:#2e8b2e;
+    --nu-light:#dff3df;
+    --card:#ffffffcc;
+  }
+  *{box-sizing:border-box;font-family:Inter, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial}
+  body{margin:0;min-height:100vh;background:linear-gradient(180deg,var(--nu-dark),#7fc77f);color:#063;display:flex;align-items:flex-start;justify-content:center;padding:28px;}
+  .wrap{width:100%;max-width:980px;background:transparent;}
+  header{display:flex;gap:16px;align-items:center;margin-bottom:18px}
+  .logo{width:72px;height:72px;background:#fff;border-radius:50%;display:flex;align-items:center;justify-content:center;box-shadow:0 6px 18px rgba(0,0,0,.12)}
+  .logo img{max-width:60px;max-height:60px}
+  h1{margin:0;font-size:20px;color:#fff}
+  p.sub{margin:0;color:rgba(255,255,255,.9);font-size:13px}
+  .card{background:var(--card);padding:14px;border-radius:12px;box-shadow:0 10px 30px rgba(0,0,0,.08);margin-bottom:14px}
+  .grid{display:grid;gap:12px}
+  .flex{display:flex;gap:10px;align-items:center}
+  label{font-size:13px;color:#234}
+  input[type="text"], input[type="file"], input[type="search"]{
+    width:100%;padding:8px 10px;border-radius:8px;border:1px solid #ddd;font-size:14px
+  }
+  button{cursor:pointer;border:0;padding:8px 12px;border-radius:8px;font-weight:600}
+  .btn-green{background:var(--nu-mid);color:#fff}
+  .btn-ghost{background:transparent;border:1px solid rgba(0,0,0,.06);color:#234}
+  .book-card{display:flex;flex-direction:column;gap:8px;background:#ffffffef;padding:12px;border-radius:10px}
+  .book-top{display:flex;gap:10px;align-items:flex-start}
+  .pdf-thumb{width:68px;height:88px;background:#f3fff3;border-radius:6px;display:flex;align-items:center;justify-content:center;font-weight:700;color:var(--nu-mid)}
+  .meta h3{margin:0;font-size:15px;color:#0a3}
+  .meta p{margin:0;font-size:13px;color:#456}
+  .book-actions{display:flex;gap:8px;margin-top:auto}
+  .small{font-size:13px}
+  .right{margin-left:auto}
+  .top-actions{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+  .footer{color:#f7fff7;margin-top:10px;text-align:center;font-size:13px}
+  .controls{display:flex;gap:8px;flex-wrap:wrap}
+  .danger{background:#d9534f;color:#fff}
+  .export-import{display:flex;gap:8px}
+  .searchbar{margin-bottom:8px}
+  @media (min-width:720px){
+    .grid-3{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
+    .grid-2{display:grid;grid-template-columns:repeat(2,1fr);gap:12px}
+  }
+</style>
+</head>
+<body>
+  <div class="wrap">
+    <header>
+      <div class="logo">
+        <!-- Jika ada file logo-maarif.png taruh di folder yang sama, akan tampil -->
+        <img src="logo-maarif.png" alt="Logo Ma'arif" onerror="this.style.display='none'">
+      </div>
+      <div>
+        <h1>Perpustakaan Digital — MIS Nahdlatul Ulama Durungbedug</h1>
+        <p class="sub">Versi lokal — tidak perlu hosting. Admin unggah file langsung dari komputer.</p>
+      </div>
+    </header>
+
+    <!-- Admin panel -->
+    <section class="card">
+      <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;">
+        <div>
+          <strong>Panel Admin (Lokal)</strong>
+          <div class="small">Unggah PDF dari komputer — file akan tersimpan di browser (komputer Anda).</div>
+        </div>
+        <div class="controls">
+          <button id="exportBtn" class="btn-ghost">Export (Backup .json)</button>
+          <label class="btn-ghost" style="padding:8px 10px;cursor:pointer">
+            Import
+            <input id="importFile" type="file" accept="application/json" style="display:none">
+          </label>
+          <button id="clearBtn" class="danger">Hapus Semua</button>
+        </div>
+      </div>
+
+      <hr style="margin:12px 0;border:none;border-top:1px solid #eee">
+
+      <form id="addForm" class="grid" onsubmit="return false;">
+        <div style="display:flex;gap:10px;flex-wrap:wrap">
+          <div style="flex:1;min-width:180px">
+            <label>Judul</label>
+            <input id="title" type="text" placeholder="Contoh: Fikih Untuk Anak">
+          </div>
+          <div style="flex:1;min-width:160px">
+            <label>Pengarang / Penerbit</label>
+            <input id="author" type="text" placeholder="Contoh: Ma'arif">
+          </div>
+          <div style="flex:1;min-width:160px">
+            <label>Pilih File PDF</label>
+            <input id="file" type="file" accept="application/pdf">
+          </div>
+          <div style="display:flex;align-items:end">
+            <button id="addBtn" class="btn-green">Tambah Buku</button>
+          </div>
+        </div>
+      </form>
+      <div id="status" class="small" style="margin-top:8px;color:#084;"></div>
+    </section>
+
+    <!-- Cari dan daftar buku -->
+    <section class="card" style="margin-top:12px">
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px">
+        <input id="search" class="searchbar" type="search" placeholder="Cari judul / pengarang..." style="flex:1;padding:8px;border-radius:8px;border:1px solid #ddd">
+        <div style="display:flex;gap:8px">
+          <button id="showAll" class="btn-ghost">Tampilkan Semua</button>
+        </div>
+      </div>
+
+      <div id="list" class="grid grid-3"></div>
+      <div id="empty" class="small" style="padding:12px;color:#345">Belum ada buku. Tambahkan buku melalui panel admin.</div>
+    </section>
+
+    <div class="footer">© MIS Nahdlatul Ulama Durungbedug — Perpustakaan Digital (Lokal)</div>
+  </div>
+
+<script>
+/*
+  Versi lokal tanpa hosting.
+  - Menyimpan file PDF (Blob) & metadata di IndexedDB.
+  - Export menghasilkan file JSON dengan base64 untuk backup.
+  - Import mengembalikan library (membaca base64 -> Blob).
+  - Catatan: data tersimpan di browser perangkat; jika clear data/browser dihapus, data hilang kecuali di-export.
+*/
+
+// ---------- IndexedDB sederhana ----------
+const DB_NAME = 'perpus_misnu';
+const STORE = 'books_v1';
+let db = null;
+
+function openDb(){
+  return new Promise((res, rej) => {
+    if (db) return res(db);
+    const req = indexedDB.open(DB_NAME, 1);
+    req.onupgradeneeded = e => {
+      const idb = e.target.result;
+      if (!idb.objectStoreNames.contains(STORE)) {
+        idb.createObjectStore(STORE, { keyPath: 'id', autoIncrement: true });
+      }
+    };
+    req.onsuccess = e => { db = e.target.result; res(db); };
+    req.onerror = e => rej(e);
+  });
+}
+
+function idbAdd(item){
+  return openDb().then(db => new Promise((res,rej)=>{
+    const tx = db.transaction(STORE, 'readwrite');
+    tx.objectStore(STORE).add(item);
+    tx.oncomplete = () => res();
+    tx.onerror = e => rej(e);
+  }));
+}
+
+function idbGetAll(){
+  return openDb().then(db => new Promise((res,rej)=>{
+    const tx = db.transaction(STORE, 'readonly');
+    const req = tx.objectStore(STORE).getAll();
+    req.onsuccess = () => res(req.result);
+    req.onerror = e => rej(e);
+  }));
+}
+
+function idbDelete(id){
+  return openDb().then(db => new Promise((res,rej)=>{
+    const tx = db.transaction(STORE, 'readwrite');
+    tx.objectStore(STORE).delete(Number(id));
+    tx.oncomplete = () => res();
+    tx.onerror = e => rej(e);
+  }));
+}
+
+function idbClear(){
+  return openDb().then(db => new Promise((res,rej)=>{
+    const tx = db.transaction(STORE, 'readwrite');
+    tx.objectStore(STORE).clear();
+    tx.oncomplete = () => res();
+    tx.onerror = e => rej(e);
+  }));
+}
+
+// ---------- Helper: file <-> base64 ----------
+function blobToBase64(blob){
+  return new Promise((res) => {
+    const fr = new FileReader();
+    fr.onload = ()=> res(fr.result.split(',')[1]); // return base64 only
+    fr.readAsDataURL(blob);
+  });
+}
+function base64ToBlob(base64, mime) {
+  const bytes = atob(base64);
+  let len = bytes.length;
+  const out = new Uint8Array(len);
+  for (let i=0;i<len;i++) out[i] = bytes.charCodeAt(i);
+  return new Blob([out], { type: mime });
+}
+
+// ---------- UI & logic ----------
+const addBtn = document.getElementById('addBtn');
+const fileInput = document.getElementById('file');
+const titleInput = document.getElementById('title');
+const authorInput = document.getElementById('author');
+const status = document.getElementById('status');
+const listEl = document.getElementById('list');
+const emptyEl = document.getElementById('empty');
+const searchEl = document.getElementById('search');
+const exportBtn = document.getElementById('exportBtn');
+const importFile = document.getElementById('importFile');
+const clearBtn = document.getElementById('clearBtn');
+const showAllBtn = document.getElementById('showAll');
+
+async function refreshList(q=''){
+  const all = await idbGetAll();
+  const filtered = all.filter(b => {
+    const s = (b.title||'') + ' ' + (b.author||'');
+    return s.toLowerCase().includes(q.toLowerCase());
+  }).sort((a,b)=> (b.createdAt||0)-(a.createdAt||0));
+  renderList(filtered);
+}
+
+function renderList(items){
+  listEl.innerHTML = '';
+  if (!items.length){
+    emptyEl.style.display = 'block';
+    return;
+  }
+  emptyEl.style.display = 'none';
+  items.forEach(b => {
+    const card = document.createElement('div');
+    card.className = 'book-card';
+    card.innerHTML = `
+      <div class="book-top">
+        <div class="pdf-thumb">PDF</div>
+        <div class="meta">
+          <h3>${escapeHtml(b.title||'Tanpa Judul')}</h3>
+          <p class="small">${escapeHtml(b.author||'')}</p>
+          <div class="small" style="margin-top:6px;color:#444">${new Date(b.createdAt||0).toLocaleString()}</div>
+        </div>
+      </div>
+      <div class="book-actions">
+        <a class="btn-green" href="#" target="_blank" rel="noreferrer" data-id="${b.id}" data-action="open">Buka PDF</a>
+        <a class="btn-ghost" href="#" download data-id="${b.id}" data-action="download">Unduh</a>
+        <button class="danger right" data-id="${b.id}" data-action="delete">Hapus</button>
+      </div>
+    `;
+    listEl.appendChild(card);
+  });
+  // attach events
+  listEl.querySelectorAll('[data-action]').forEach(el=>{
+    el.addEventListener('click', async (ev)=>{
+      ev.preventDefault();
+      const id = Number(el.dataset.id);
+      const act = el.dataset.action;
+      if (act === 'delete'){
+        if (!confirm('Hapus buku ini?')) return;
+        await idbDelete(id);
+        status.textContent = 'Buku dihapus.';
+        refreshList(searchEl.value);
+      } else if (act === 'open' || act === 'download'){
+        // ambil blob dan buat objectURL
+        const all = await idbGetAll();
+        const book = all.find(x=>x.id===id);
+        if (!book){ alert('Buku tidak ditemukan'); return; }
+        const blob = b64toBlobFromMeta(book);
+        const url = URL.createObjectURL(blob);
+        if (act === 'open') window.open(url, '_blank');
+        else {
+          // set href and filename then click
+          const a = document.createElement('a');
+          a.href = url; a.download = (book.title||'buku') + '.pdf';
+          document.body.appendChild(a); a.click(); a.remove();
+        }
+        // release later
+        setTimeout(()=>URL.revokeObjectURL(url), 10000);
+      }
+    });
+  });
+}
+
+function b64toBlobFromMeta(book){
+  // book.fileBase64 + book.fileType
+  return base64ToBlob(book.fileBase64, book.fileType || 'application/pdf');
+}
+
+function escapeHtml(s){ if(!s) return ''; return s.replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'})[c]); }
+
+// Add book
+addBtn.addEventListener('click', async ()=>{
+  const title = titleInput.value.trim();
+  const author = authorInput.value.trim();
+  const file = fileInput.files[0];
+  if (!file){ alert('Pilih file PDF terlebih dahulu'); return; }
+  if (!title){ if(!confirm('Judul kosong — lanjut?')) return; }
+  if (file.type !== 'application/pdf'){ if(!confirm('File bukan PDF, tetap unggah?')){} }
+  status.textContent = 'Menyimpan...';
+  try {
+    const base64 = await blobToBase64(file);
+    const item = {
+      title, author,
+      fileBase64: base64,
+      fileName: file.name,
+      fileType: file.type,
+      createdAt: Date.now()
+    };
+    await idbAdd(item);
+    titleInput.value=''; authorInput.value=''; fileInput.value='';
+    status.textContent = 'Buku tersimpan lokal.';
+    refreshList(searchEl.value);
+  } catch (err){
+    console.error(err); status.textContent = 'Gagal menyimpan.';
+  }
+});
+
+// Search
+searchEl.addEventListener('input', ()=> refreshList(searchEl.value));
+showAllBtn.addEventListener('click', ()=> { searchEl.value=''; refreshList('') });
+
+// Export (backup)
+exportBtn.addEventListener('click', async ()=>{
+  const all = await idbGetAll();
+  if (!all.length){ alert('Tidak ada data untuk diexport'); return; }
+  // fileBase64 sudah ada di setiap item, kita bisa pack langsung
+  const payload = { exportedAt:Date.now(), items: all };
+  const blob = new Blob([JSON.stringify(payload)], { type: 'application/json' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'perpus_backup_' + new Date().toISOString().slice(0,19).replace(/[:T]/g,'-') + '.json';
+  document.body.appendChild(a); a.click(); a.remove();
+  URL.revokeObjectURL(a.href);
+});
+
+// Import
+importFile.addEventListener('change', async (ev)=>{
+  const f = ev.target.files[0];
+  if (!f) return;
+  if (!confirm('Import akan menambahkan semua item dari file ke library lokal. Lanjut?')) { importFile.value=''; return; }
+  try {
+    const txt = await f.text();
+    const parsed = JSON.parse(txt);
+    if (!parsed.items || !Array.isArray(parsed.items)) throw new Error('Format tidak valid');
+    // simpan satu per satu
+    for (const it of parsed.items){
+      // basic shape check
+      if (!it.fileBase64) continue;
+      const item = {
+        title: it.title||'',
+        author: it.author||'',
+        fileBase64: it.fileBase64,
+        fileName: it.fileName || ('buku-' + Date.now() + '.pdf'),
+        fileType: it.fileType || 'application/pdf',
+        createdAt: Date.now()
+      };
+      await idbAdd(item);
+    }
+    importFile.value='';
+    alert('Import selesai.');
+    refreshList('');
+  } catch (err){
+    console.error(err);
+    alert('Gagal import: ' + err.message);
+  }
+});
+
+// Clear all
+clearBtn.addEventListener('click', async ()=>{
+  if (!confirm('Hapus seluruh library lokal? Tindakan ini tidak bisa dibatalkan.')) return;
+  await idbClear();
+  status.textContent = 'Semua data dihapus.';
+  refreshList('');
+});
+
+// on load
+refreshList('');
+
+// Notes: when opening PDFs we reconstruct Blob from base64 stored in IndexedDB.
+// This keeps everything local and portable via Export/Import.
+</script>
+</body>
+</html>
